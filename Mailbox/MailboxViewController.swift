@@ -14,13 +14,14 @@ class MailboxViewController: UIViewController {
     @IBOutlet var panGestureRecognizer: UIPanGestureRecognizer!
     
 
-    @IBOutlet weak var messagesBackground: UIView!
     @IBOutlet weak var messageContainerView: UIView!
-    @IBOutlet weak var messagesView: UIView!
+    @IBOutlet weak var messageImageView: UIImageView!
     @IBOutlet weak var laterIcon: UIImageView!
     @IBOutlet weak var listIcon: UIImageView!
     @IBOutlet weak var deleteIcon: UIImageView!
     @IBOutlet weak var archiveIcon: UIImageView!
+    @IBOutlet weak var rescheduleImageView: UIImageView!
+    @IBOutlet weak var feedImageView: UIImageView!
     
     
     var grayColor = UIColor(red: 229/255.0, green: 230/255.0, blue: 232/255.0, alpha:1.0)
@@ -30,12 +31,17 @@ class MailboxViewController: UIViewController {
     var greenColor = UIColor(red: 98/255.0, green: 214/255.0, blue: 79/255.0, alpha:1.0)
     
     var messageOriginalCenter: CGPoint!
+    var fixedLeftPosition: CGFloat!
+    var offscreenLeftPosition: CGFloat!
+    var offscreenRightPosition: CGFloat!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
         scrollView.contentSize = CGSize(width: 320, height: 1284)
+        fixedLeftPosition = messageImageView.center.x
+        offscreenLeftPosition = messageImageView.center.x - 320
+        offscreenRightPosition = messageImageView.center.x + 320
 
         // Do any additional setup after loading the view.
     }
@@ -49,52 +55,139 @@ class MailboxViewController: UIViewController {
         let translation = sender.translationInView(view)
         let velocity = sender.velocityInView(view)
         
-
+       
+        print(translation.x)
+        
+        //BEGAN
         if sender.state == UIGestureRecognizerState.Began {
-            messageOriginalCenter = messagesView.center
-            
+            messageOriginalCenter = messageImageView.center
+          
+        //CHANGED
         } else if sender.state == UIGestureRecognizerState.Changed {
-            messagesView.center = CGPoint(x: messageOriginalCenter.x + translation.x, y: messageOriginalCenter.y)
+            messageImageView.center = CGPoint(x: messageOriginalCenter.x + translation.x, y: messageOriginalCenter.y)
             
-                // pan to right with gray background
+                // pan to right with gray background with archive icon
                 if translation.x >= 0 && translation.x < 60 {
-                    messagesBackground.backgroundColor = grayColor
+                    messageContainerView.backgroundColor = grayColor
+                    laterIcon.alpha = 0
+                    listIcon.alpha = 0
+                    deleteIcon.alpha = 0
+                    archiveIcon.alpha = 1
+                    
+                    
                 }
                     
-                // pan to right with green background
+                // pan to right with green background with archive icon moving
                 else if translation.x >= 60 && translation.x < 260 {
-                    messagesBackground.backgroundColor = greenColor
+                    messageContainerView.backgroundColor = greenColor
+                    laterIcon.alpha = 0
+                    listIcon.alpha = 0
+                    deleteIcon.alpha = 0
+                    archiveIcon.alpha = 1
+                    
+                    archiveIcon.center.x = messageImageView.center.x - 190
+                    
                 }
                 
-                // pan to right with red background
+                // pan to right with red background with delete icon
                 else if translation.x >= 260  {
-                    messagesBackground.backgroundColor = redColor
+                    messageContainerView.backgroundColor = redColor
+                    laterIcon.alpha = 0
+                    listIcon.alpha = 0
+                    deleteIcon.alpha = 1
+                    archiveIcon.alpha = 0
+                    
+                    deleteIcon.center.x = messageImageView.center.x - 190
+                    
                 }
                     
-                // pan to left with gray background
+                // pan to left with gray background with later icon
                 else if translation.x <= 0 && translation.x > -60 {
-                    messagesBackground.backgroundColor = grayColor
+                    messageContainerView.backgroundColor = grayColor
                     laterIcon.alpha = 1
+                    listIcon.alpha = 0
+                    deleteIcon.alpha = 0
+                    archiveIcon.alpha = 0
+                    
+                    
                 }
                     
-                // pan to left with yellow background
+                // pan to left with yellow background with later icon moving
                 else if translation.x <= -60 && translation.x > -260 {
-                    messagesBackground.backgroundColor = yellowColor
+                    messageContainerView.backgroundColor = yellowColor
+                    laterIcon.alpha = 1
+                    listIcon.alpha = 0
+                    deleteIcon.alpha = 0
+                    archiveIcon.alpha = 0
+                    
+                    laterIcon.center.x = messageImageView.center.x + 190
                 }
+                    
+                //pan to left with brown background with list icon
                 else if translation.x <= -260 {
-                    messagesBackground.backgroundColor = brownColor
+                    messageContainerView.backgroundColor = brownColor
+                    laterIcon.alpha = 0
+                    listIcon.alpha = 1
+                    deleteIcon.alpha = 0
+                    archiveIcon.alpha = 0
+                    
+                    listIcon.center.x = messageImageView.center.x + 190
                 }
 
        
-            
+       //ENDED
         } else if sender.state == UIGestureRecognizerState.Ended {
             
+            // pan to right or left with gray background
+            if translation.x < 60 && translation.x > -60 {
+                self.messageImageView.center.x = self.fixedLeftPosition
+                laterIcon.alpha = 0
+            }
+                
+                // pan to right with green background
+            else if translation.x >= 60 && translation.x < 260 {
+                self.messageImageView.center.x = self.offscreenRightPosition
+                archiveIcon.alpha = 0
+            }
+                
+                // pan to right with red background
+            else if translation.x >= 260  {
+                self.messageImageView.center.x = self.offscreenRightPosition
+                deleteIcon.alpha = 0
+            }
+                
+                // pan to left with yellow background
+            else if translation.x <= -60 && translation.x > -260{
+                self.messageImageView.center.x = self.offscreenLeftPosition
+                laterIcon.alpha = 0
+                rescheduleImageView.alpha = 1
+            }
+                
+                // pan to left with gray background
+            else if translation.x <= 0 && translation.x > -60 {
+                self.messageImageView.center.x = self.fixedLeftPosition
+                archiveIcon.alpha = 0
+            }
             
+                // pan to left with brown background
+            else if translation.x <= -260 {
+                self.messageImageView.center.x = self.offscreenLeftPosition
+                listIcon.alpha = 0
+            }
         }
-
-        
     }
     
+    @IBAction func didTapRescheduleIamge(sender: UITapGestureRecognizer) {
+        rescheduleImageView.alpha = 0
+        UIView.animateWithDuration(0.2) { () -> Void in
+            self.messageContainerView.alpha = 0
+        }
+        UIView.animateWithDuration(0.2) { () -> Void in
+            self.feedImageView.center.y = self.feedImageView.center.y - 86
+        }
+        
+        
+    }
     
     /*
     // MARK: - Navigation
