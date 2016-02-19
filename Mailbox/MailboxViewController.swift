@@ -11,9 +11,6 @@ import UIKit
 class MailboxViewController: UIViewController {
 
     @IBOutlet weak var scrollView: UIScrollView!
-    @IBOutlet var panGestureRecognizer: UIPanGestureRecognizer!
-    
-
     @IBOutlet weak var messageContainerView: UIView!
     @IBOutlet weak var messageImageView: UIImageView!
     @IBOutlet weak var laterIcon: UIImageView!
@@ -22,6 +19,9 @@ class MailboxViewController: UIViewController {
     @IBOutlet weak var archiveIcon: UIImageView!
     @IBOutlet weak var rescheduleImageView: UIImageView!
     @IBOutlet weak var feedImageView: UIImageView!
+    @IBOutlet weak var listImageView: UIImageView!
+    @IBOutlet weak var menuImageView: UIImageView!
+    @IBOutlet weak var mailboxContainerView: UIView!
     
     
     var grayColor = UIColor(red: 229/255.0, green: 230/255.0, blue: 232/255.0, alpha:1.0)
@@ -35,13 +35,19 @@ class MailboxViewController: UIViewController {
     var offscreenLeftPosition: CGFloat!
     var offscreenRightPosition: CGFloat!
     
+    var mailboxOriginalCenter: CGPoint!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        scrollView.contentSize = CGSize(width: 320, height: 1284)
+        scrollView.contentSize = CGSize(width: 320, height: 1370)
         fixedLeftPosition = messageImageView.center.x
         offscreenLeftPosition = messageImageView.center.x - 320
         offscreenRightPosition = messageImageView.center.x + 320
+        
+        let edgeGesture = UIScreenEdgePanGestureRecognizer(target: self, action: "didEdgePan:")
+        edgeGesture.edges = UIRectEdge.Left
+        mailboxContainerView.addGestureRecognizer(edgeGesture)
 
         // Do any additional setup after loading the view.
     }
@@ -51,10 +57,38 @@ class MailboxViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    @IBAction func didPan(sender: UIPanGestureRecognizer) {
+    @IBAction func didEdgePan(sender: UIScreenEdgePanGestureRecognizer) {
         let translation = sender.translationInView(view)
         let velocity = sender.velocityInView(view)
         
+        print("Edge pan is panning")
+        
+        if sender.state == UIGestureRecognizerState.Began {
+            mailboxOriginalCenter = mailboxContainerView.center
+            
+        } else if sender.state == UIGestureRecognizerState.Changed {
+            mailboxContainerView.center = CGPoint(x: mailboxOriginalCenter.x + translation.x, y: mailboxOriginalCenter.y)
+            
+        } else if sender.state == UIGestureRecognizerState.Ended {
+            if velocity.x > 0 {
+                self.mailboxContainerView.center.x = self.mailboxOriginalCenter.x + 285
+            } else {
+                self.mailboxContainerView.center.x = self.mailboxOriginalCenter.x
+            }
+        }
+
+    }
+    
+    @IBAction func didTapHamburger(sender: AnyObject) {
+        UIView.animateWithDuration(0.3) { () -> Void in
+            self.mailboxContainerView.center.x = self.mailboxOriginalCenter.x
+        }
+        
+    }
+    
+    
+    @IBAction func didPan(sender: UIPanGestureRecognizer) {
+        let translation = sender.translationInView(view)
        
         print(translation.x)
         
@@ -73,8 +107,6 @@ class MailboxViewController: UIViewController {
                     listIcon.alpha = 0
                     deleteIcon.alpha = 0
                     archiveIcon.alpha = 1
-                    
-                    
                 }
                     
                 // pan to right with green background with archive icon moving
@@ -86,7 +118,6 @@ class MailboxViewController: UIViewController {
                     archiveIcon.alpha = 1
                     
                     archiveIcon.center.x = messageImageView.center.x - 190
-                    
                 }
                 
                 // pan to right with red background with delete icon
@@ -98,7 +129,6 @@ class MailboxViewController: UIViewController {
                     archiveIcon.alpha = 0
                     
                     deleteIcon.center.x = messageImageView.center.x - 190
-                    
                 }
                     
                 // pan to left with gray background with later icon
@@ -108,8 +138,6 @@ class MailboxViewController: UIViewController {
                     listIcon.alpha = 0
                     deleteIcon.alpha = 0
                     archiveIcon.alpha = 0
-                    
-                    
                 }
                     
                 // pan to left with yellow background with later icon moving
@@ -148,12 +176,14 @@ class MailboxViewController: UIViewController {
             else if translation.x >= 60 && translation.x < 260 {
                 self.messageImageView.center.x = self.offscreenRightPosition
                 archiveIcon.alpha = 0
+                hideMessageView()
             }
                 
                 // pan to right with red background
             else if translation.x >= 260  {
                 self.messageImageView.center.x = self.offscreenRightPosition
                 deleteIcon.alpha = 0
+                hideMessageView()
             }
                 
                 // pan to left with yellow background
@@ -173,30 +203,38 @@ class MailboxViewController: UIViewController {
             else if translation.x <= -260 {
                 self.messageImageView.center.x = self.offscreenLeftPosition
                 listIcon.alpha = 0
+                listImageView.alpha = 1
             }
         }
     }
-    
+
     @IBAction func didTapRescheduleIamge(sender: UITapGestureRecognizer) {
         rescheduleImageView.alpha = 0
-        UIView.animateWithDuration(0.2) { () -> Void in
-            self.messageContainerView.alpha = 0
-        }
-        UIView.animateWithDuration(0.2) { () -> Void in
-            self.feedImageView.center.y = self.feedImageView.center.y - 86
-        }
-        
-        
+        hideMessageView()
     }
     
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    @IBAction func didTapListImage(sender: UITapGestureRecognizer) {
+        listImageView.alpha = 0
+        hideMessageView()
     }
-    */
-
-}
+    
+    // custom function to animate message away
+    func hideMessageView() {
+        UIView.animateWithDuration(0.2, delay: 0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
+            self.messageContainerView.alpha = 0
+            }, completion: nil)
+        UIView.animateWithDuration(0.4, delay: 0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
+            self.feedImageView.center.y = self.feedImageView.center.y - 86
+            }, completion: nil)
+        }
+    
+    // function to tap and reload message
+    @IBAction func didTapToReload(sender: UITapGestureRecognizer) {
+        self.messageContainerView.alpha = 1
+        self.messageImageView.center = self.messageOriginalCenter
+        
+        UIView.animateWithDuration(0.6, delay: 0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
+             self.feedImageView.center.y = self.feedImageView.center.y + 86
+            }, completion: nil)
+        }
+    }
