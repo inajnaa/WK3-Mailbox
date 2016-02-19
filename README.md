@@ -30,4 +30,4 @@ Completed user stories:
 
 Walkthrough of all user stories:
 
-![Demo](dropboxDemo.gif)
+![Demo](Demo.gif)
